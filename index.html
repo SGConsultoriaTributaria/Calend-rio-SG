@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendário Tributário | SG Consultoria Tributária</title>
+<style>
+:root{--azul:#173f73;--azul-claro:#eaf1f8;--fundo:#f5f7fa;--branco:#fff;--texto:#172033;--cinza:#6b7280;--borda:#e3e7ed}
+*{box-sizing:border-box} body{margin:0;padding:30px;font-family:Arial,Helvetica,sans-serif;background:var(--fundo);color:var(--texto)}
+.container{max-width:1180px;margin:auto}.calendario{background:var(--branco);border:1px solid var(--borda);border-radius:20px;overflow:hidden}
+.topo{padding:35px}.marca{color:var(--azul);font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase}
+.cabecalho{display:flex;justify-content:space-between;align-items:flex-end;gap:25px}h1{margin:8px 0;font-size:34px}.subtitulo{margin:0;color:var(--cinza);line-height:1.5}
+.navegacao{display:flex;align-items:center;gap:12px}.navegacao button{width:45px;height:45px;border-radius:12px;border:1px solid var(--borda);background:#fff;cursor:pointer;font-size:25px;color:var(--azul)}
+.navegacao button:hover{background:var(--azul-claro)}#mesAtual{min-width:170px;text-align:center;font-weight:bold;font-size:17px}
+.filtros{margin-top:28px;display:flex;flex-wrap:wrap;gap:10px}.filtro{border:1px solid var(--borda);background:#fff;padding:10px 18px;border-radius:30px;cursor:pointer;font-size:14px}
+.filtro:hover{border-color:var(--azul)}.filtro.ativo{background:var(--azul);color:#fff;border-color:var(--azul)}
+.conteudo{border-top:1px solid var(--borda);background:#fafbfc;padding:30px;display:grid;grid-template-columns:1fr 310px;gap:30px}
+.dias-semana,.grade{display:grid;grid-template-columns:repeat(7,1fr)}.dias-semana{margin-bottom:8px}.dias-semana div{text-align:center;font-size:11px;font-weight:bold;color:var(--cinza)}
+.grade{gap:8px}.dia{min-height:90px;border:1px solid var(--borda);background:#fff;border-radius:10px;padding:10px;position:relative}.dia.com-evento{cursor:pointer}
+.dia.com-evento:hover{border-color:var(--azul);background:var(--azul-claro)}.numero{font-weight:bold}.nome-evento{margin-top:12px;font-size:11px;color:var(--cinza);line-height:1.3}
+.indicador{position:absolute;width:7px;height:7px;background:var(--azul);border-radius:50%;bottom:8px;left:10px}
+.lateral h2{margin-top:0;font-size:18px}.evento-lateral{width:100%;border:1px solid var(--borda);background:#fff;border-radius:12px;padding:15px;margin-bottom:10px;cursor:pointer;text-align:left}
+.evento-lateral:hover{border-color:var(--azul)}.evento-flex{display:flex;gap:15px}.data-evento{color:var(--azul);font-weight:bold;font-size:20px}.titulo-evento{font-weight:bold;font-size:14px}
+.categoria{color:var(--cinza);font-size:12px;margin-top:4px}.dica{margin-top:20px;border:1px solid var(--borda);border-radius:12px;padding:17px;background:#fff}.dica strong{color:var(--azul)}
+.dica p{color:var(--cinza);font-size:13px;line-height:1.5;margin-bottom:0}.detalhes{margin-top:20px;background:#fff;border:1px solid var(--borda);border-left:5px solid var(--azul);border-radius:12px;padding:20px;display:none}
+.detalhes.ativo{display:block}.detalhes h3{margin-top:0;color:var(--azul)}.detalhes p{color:var(--cinza);line-height:1.6}.aviso{text-align:center;color:var(--cinza);font-size:11px;margin-top:15px}
+@media(max-width:850px){body{padding:15px}.cabecalho{flex-direction:column;align-items:flex-start}.conteudo{grid-template-columns:1fr}.dia{min-height:65px;padding:7px}.nome-evento{display:none}}
+@media(max-width:500px){.topo{padding:22px}.conteudo{padding:15px}h1{font-size:26px}.dia{min-height:48px;font-size:12px}.grade{gap:4px}}
+</style>
+</head>
+<body>
+<div class="container"><div class="calendario">
+<div class="topo"><div class="cabecalho"><div><div class="marca">SG CONSULTORIA TRIBUTÁRIA</div><h1>Calendário Tributário</h1><p class="subtitulo">Acompanhe os principais prazos e obrigações tributárias da sua empresa.</p></div>
+<div class="navegacao"><button onclick="mudarMes(-1)">‹</button><div id="mesAtual"></div><button onclick="mudarMes(1)">›</button></div></div>
+<div class="filtros"><button class="filtro ativo" data-categoria="Todos">Todos</button><button class="filtro" data-categoria="MEI">MEI</button><button class="filtro" data-categoria="Simples Nacional">Simples Nacional</button><button class="filtro" data-categoria="Empresas">Empresas</button></div></div>
+<div class="conteudo"><div><div class="dias-semana"><div>DOM</div><div>SEG</div><div>TER</div><div>QUA</div><div>QUI</div><div>SEX</div><div>SÁB</div></div><div id="grade" class="grade"></div><div id="detalhes" class="detalhes"></div></div>
+<div class="lateral"><h2>Próximos vencimentos</h2><div id="listaEventos"></div><div class="dica"><strong>💡 Informação SG</strong><p>Clique sobre uma data para visualizar mais informações sobre a obrigação tributária.</p></div></div></div>
+</div><p class="aviso">Consulte sempre as fontes oficiais e um profissional responsável para confirmar os prazos aplicáveis à sua empresa.</p></div>
+<script>
+const nomesMeses=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+let mes=8,ano=2026,categoriaSelecionada="Todos";
+const eventos={
+"2026-09":[
+{dia:10,titulo:"Obrigação mensal",categoria:"Empresas",descricao:"Exemplo de compromisso tributário mensal. Substitua pelas informações oficiais."},
+{dia:15,titulo:"Prazo MEI",categoria:"MEI",descricao:"Exemplo de obrigação destinada ao Microempreendedor Individual."},
+{dia:20,titulo:"DAS — Simples Nacional",categoria:"Simples Nacional",descricao:"Exemplo de vencimento mensal relacionado ao Simples Nacional."},
+{dia:25,titulo:"Obrigação fiscal",categoria:"Empresas",descricao:"Exemplo de prazo fiscal destinado às empresas."},
+{dia:30,titulo:"Fechamento do mês",categoria:"Empresas",descricao:"Data ilustrativa para organização e conferência das obrigações tributárias."}],
+"2026-10":[
+{dia:15,titulo:"Prazo MEI",categoria:"MEI",descricao:"Exemplo de obrigação destinada ao Microempreendedor Individual."},
+{dia:20,titulo:"DAS — Simples Nacional",categoria:"Simples Nacional",descricao:"Exemplo de vencimento relacionado ao Simples Nacional."},
+{dia:30,titulo:"Fechamento tributário",categoria:"Empresas",descricao:"Data ilustrativa para revisão das obrigações tributárias do mês."}]
+};
+function chaveMes(){return ano+"-"+String(mes+1).padStart(2,"0")}
+function eventosFiltrados(){const lista=eventos[chaveMes()]||[];return categoriaSelecionada==="Todos"?lista:lista.filter(e=>e.categoria===categoriaSelecionada)}
+function renderizarCalendario(){
+ const grade=document.getElementById("grade"),tituloMes=document.getElementById("mesAtual"),lista=document.getElementById("listaEventos"),detalhes=document.getElementById("detalhes");
+ grade.innerHTML="";lista.innerHTML="";detalhes.classList.remove("ativo");tituloMes.textContent=nomesMeses[mes]+" "+ano;
+ const primeiroDia=new Date(ano,mes,1).getDay(),quantidadeDias=new Date(ano,mes+1,0).getDate(),eventosMes=eventosFiltrados();
+ for(let i=0;i<primeiroDia;i++){grade.appendChild(document.createElement("div"))}
+ for(let dia=1;dia<=quantidadeDias;dia++){
+  const elemento=document.createElement("div");elemento.className="dia";const evento=eventosMes.find(item=>item.dia===dia);
+  elemento.innerHTML='<div class="numero">'+dia+"</div>";
+  if(evento){elemento.classList.add("com-evento");elemento.innerHTML+='<div class="nome-evento">'+evento.titulo+'</div><div class="indicador"></div>';elemento.onclick=()=>mostrarDetalhes(evento)}
+  grade.appendChild(elemento)
+ }
+ if(eventosMes.length===0)lista.innerHTML='<p style="color:#6b7280;font-size:13px;">Nenhum vencimento cadastrado neste período.</p>';
+ eventosMes.forEach(evento=>{const botao=document.createElement("button");botao.className="evento-lateral";botao.innerHTML='<div class="evento-flex"><div class="data-evento">'+String(evento.dia).padStart(2,"0")+'</div><div><div class="titulo-evento">'+evento.titulo+'</div><div class="categoria">'+evento.categoria+"</div></div></div>";botao.onclick=()=>mostrarDetalhes(evento);lista.appendChild(botao)})
+}
+function mostrarDetalhes(evento){const detalhes=document.getElementById("detalhes");detalhes.innerHTML="<h3>"+evento.dia+" de "+nomesMeses[mes]+"</h3><strong>"+evento.titulo+'</strong><div class="categoria">'+evento.categoria+"</div><p>"+evento.descricao+"</p>";detalhes.classList.add("ativo");detalhes.scrollIntoView({behavior:"smooth",block:"nearest"})}
+function mudarMes(valor){mes+=valor;if(mes<0){mes=11;ano--}if(mes>11){mes=0;ano++}renderizarCalendario()}
+document.querySelectorAll(".filtro").forEach(botao=>botao.addEventListener("click",function(){document.querySelectorAll(".filtro").forEach(item=>item.classList.remove("ativo"));this.classList.add("ativo");categoriaSelecionada=this.dataset.categoria;renderizarCalendario()}));
+renderizarCalendario();
+</script>
+</body>
+</html>
